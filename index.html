@@ -14,13 +14,19 @@
     .grid { display: flex; gap: 20px; flex-wrap: wrap; }
     .col { flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .product-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
+    
+    /* Estilos para productos sin stock */
+    .product-item.out-of-stock { opacity: 0.55; background-color: #f9f9f9; }
+    
     button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    button:disabled { background: #6c757d !important; cursor: not-allowed; opacity: 0.6; }
     button.btn-blue { background: #007bff; }
     button.btn-whatsapp { background: #25D366; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
     input, select { width: 100%; padding: 8px; margin: 5px 0 12px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     ul { list-style: none; padding: 0; }
     li { padding: 6px 0; border-bottom: 1px solid #eee; }
     .material-text { color: #555; font-weight: normal; font-style: italic; }
+    .badge-agotado { color: #dc3545; font-weight: bold; font-size: 12px; margin-left: 5px; }
   </style>
 </head>
 <body>
@@ -41,6 +47,7 @@
       <label>Material:</label>
       <select id="prod-material">
         <option value="Plata ley 925">Plata ley 925</option>
+        <option value="Oro 10K">Oro 10K</option>
         <option value="Oro">Oro</option>
         <option value="Plata">Plata</option>
         <option value="Acero">Acero</option>
@@ -68,6 +75,7 @@
         <select id="filtro-material" onchange="filtrarProductos()">
           <option value="TODOS">Todos los materiales</option>
           <option value="Plata ley 925">Plata ley 925</option>
+          <option value="Oro 10K">Oro 10K</option>
           <option value="Oro">Oro</option>
           <option value="Plata">Plata</option>
           <option value="Acero">Acero</option>
@@ -92,7 +100,7 @@
 
   <script>
     // PON TU URL DE GOOGLE APPS SCRIPT AQUÍ
-    const API_URL = "https://script.google.com/macros/s/AKfycbyk8wfIMc8mQxx-KNdKF2YtfchGV2aFNyMAEahaltgKmPV_QoW6FHo6r31pc5z3yXwk/exec";
+    const API_URL = "REEMPLAZA_CON_TU_URL_DE_APPS_SCRIPT";
 
     let productos = [];
     let carrito = [];
@@ -138,13 +146,23 @@
       }
       lista.forEach(p => {
         const matTexto = p.material ? ` (${p.material})` : '';
+        const sinStock = parseInt(p.stock) <= 0;
+        
+        // Verificar cuántos hay agregados en el carrito actualmente
+        const enCarrito = carrito.find(c => c.id == p.id);
+        const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
+        const alcanzomaximo = cantidadEnCarrito >= parseInt(p.stock);
+
+        const deshabilitado = sinStock || alcanzomaximo;
+
         div.innerHTML += `
-          <div class="product-item">
+          <div class="product-item ${sinStock ? 'out-of-stock' : ''}">
             <div>
-              <strong>${p.nombre}</strong><span class="material-text">${matTexto}</span><br>
+              <strong>${p.nombre}</strong><span class="material-text">${matTexto}</span>
+              ${sinStock ? '<span class="badge-agotado">(Agotado)</span>' : ''}<br>
               <small>ID: ${p.id} | $${p.precio} | Stock: ${p.stock}</small>
             </div>
-            <button onclick="agregarAlCarrito('${p.id}')">+</button>
+            <button ${deshabilitado ? 'disabled' : ''} onclick="agregarAlCarrito('${p.id}')">+</button>
           </div>
         `;
       });
@@ -205,11 +223,19 @@
 
       const enCarrito = carrito.find(c => c.id == id);
       if (enCarrito) {
-        enCarrito.cantidad++;
+        if (enCarrito.cantidad < prod.stock) {
+          enCarrito.cantidad++;
+        } else {
+          alert("No puedes agregar más unidades de las disponibles en stock.");
+          return;
+        }
       } else {
-        carrito.push({ ...prod, cantidad: 1 });
+        if (prod.stock > 0) {
+          carrito.push({ ...prod, cantidad: 1 });
+        }
       }
       renderCarrito();
+      renderProductos(productos); // Volver a renderizar para deshabilitar botón si alcanza el tope
     }
 
     function renderCarrito() {
