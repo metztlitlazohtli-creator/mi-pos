@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Punto de Venta</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
+    h1 { color: #333; text-align: center; }
+    .status { text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 5px; }
+    .online { background: #d4edda; color: #155724; }
+    .offline { background: #f8d7da; color: #721c24; }
+    .grid { display: flex; gap: 20px; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 300px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .product-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
+    button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+    button.btn-whatsapp { background: #25D366; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
+    ul { list-style: none; padding: 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Punto de Venta</h1>
+  <div id="status" class="status online">🟢 En línea</div>
+
+  <div class="grid">
+    <!-- Catálogo de Productos -->
+    <div class="col">
+      <h2>Catálogo</h2>
+      <button onclick="cargarProductos()">🔄 Cargar / Actualizar Stock</button>
+      <div id="lista-productos"></div>
+    </div>
+
+    <!-- Carrito / Ticket -->
+    <div class="col">
+      <h2>Carrito de Compra</h2>
+      <ul id="carrito"></ul>
+      <h3>Total: $<span id="total">0</span></h3>
+      <label>Teléfono del cliente (con código de país, ej: 521234567890):</label>
+      <input type="text" id="telefono" placeholder="Ej: 521234567890" style="width: 100%; padding: 8px; margin: 10px 0;">
+      <button class="btn-whatsapp" onclick="completarVenta()">🛒 Finalizar Venta y Enviar Ticket</button>
+    </div>
+  </div>
+
+  <script>
+    // URL DE TU PASO 2
+    const API_URL = "https://script.google.com/macros/s/AKfycbxuEE1soJbJ89hp9LEeqCLxn5zNw1ET7Yz86Alq-e0QoLR9OaLH98AJdcPuDWdIow8Q/exec";
+
+    let productos = [];
+    let carrito = [];
+
+    // Estado Online/Offline
+    window.addEventListener('online', actualizarEstado);
+    window.addEventListener('offline', actualizarEstado);
+
+    function actualizarEstado() {
+      const status = document.getElementById('status');
+      if (navigator.onLine) {
+        status.className = "status online";
+        status.innerText = "🟢 En línea - Sincronizando...";
+        sincronizarVentasPendientes();
+      } else {
+        status.className = "status offline";
+        status.innerText = "🔴 Modo Offline (Las ventas se guardan en el celular/PC)";
+      }
+    }
+
+    // Registrar Service Worker para Offline
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    async function cargarProductos() {
+      if (navigator.onLine) {
+        try {
+          const res = await fetch(API_URL + "?action=getProducts");
+          productos = await res.json();
+          localStorage.setItem('productos_cache', JSON.stringify(productos));
+        } catch(e) { console.log(e); }
+      } else {
+        productos = JSON.parse(localStorage.getItem('productos_cache') || "[]");
+      }
+      renderProductos();
+    }
+
+    function renderProductos() {
+      const div = document.getElementById('lista-productos');
+      div.innerHTML = "";
+      productos.forEach(p => {
+        div.innerHTML += `
+          <div class="product-item">
+            <div><strong>${p.nombre}</strong> - $${p.precio} (Stock: ${p.stock})</div>
+            <button onclick="agregarAlCarrito(${p.id})">+</button>
+          </div>
+        `;
+      });
+    }
+
+    function agregarAlCarrito(id) {
+      const prod = productos.find(p => p.id == id);
+      const enCarrito = carrito.find(c => c.id == id);
+      if (enCarrito) {
+        enCarrito.cantidad++;
+      } else {
+        carrito.push({ ...prod, cantidad: 1 });
+      }
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const ul = document.getElementById('carrito');
+      ul.innerHTML = "";
+      let total = 0;
+      carrito.forEach(item => {
+        total += item.precio * item.cantidad;
+        ul.innerHTML += `<li>${item.nombre} x${item.cantidad} = $${item.precio * item.cantidad}</li>`;
+      });
+      document.getElementById('total').innerText = total;
+    }
+
+    async function completarVenta() {
+      if (carrito.length === 0) return alert("El carrito está vacío");
+
+      const total = document.getElementById('total').innerText;
+      const venta = {
+        id: Date.now(),
+        fecha: new Date().toISOString(),
+        total: total,
+        items: carrito
+      };
+
+      // Guardar venta
+      let pendientes = JSON.parse(localStorage.getItem('ventas_pendientes') || "[]");
+      pendientes.push(venta);
+      localStorage.setItem('ventas_pendientes', JSON.stringify(pendientes));
+
+      // Enviar Ticket por WhatsApp
+      const tel = document.getElementById('telefono').value;
+      if (tel) {
+        let msg = `*TICKET DE COMPRA*\nFecha: ${new Date().toLocaleDateString()}\n\n`;
+        carrito.forEach(i => msg += `${i.nombre} x${i.cantidad} = $${i.precio * i.cantidad}\n`);
+        msg += `\n*TOTAL: $${total}*`;
+        window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+      }
+
+      // Reiniciar
+      carrito = [];
+      renderCarrito();
+      actualizarEstado();
+    }
+
+    async function sincronizarVentasPendientes() {
+      if (!navigator.onLine) return;
+      let pendientes = JSON.parse(localStorage.getItem('ventas_pendientes') || "[]");
+      if (pendientes.length === 0) return;
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "syncSale", sales: pendientes })
+        });
+        localStorage.setItem('ventas_pendientes', "[]");
+        alert("¡Ventas guardadas sin internet han sido subidas a Google Sheets!");
+        cargarProductos();
+      } catch(e) { console.log(e); }
+    }
+
+    cargarProductos();
+  </script>
+</body>
+</html>
