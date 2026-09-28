@@ -17,9 +17,10 @@
     button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
     button.btn-blue { background: #007bff; }
     button.btn-whatsapp { background: #25D366; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
-    input { width: 100%; padding: 8px; margin: 5px 0 12px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    input, select { width: 100%; padding: 8px; margin: 5px 0 12px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     ul { list-style: none; padding: 0; }
     li { padding: 6px 0; border-bottom: 1px solid #eee; }
+    .material-text { color: #555; font-weight: normal; font-style: italic; }
   </style>
 </head>
 <body>
@@ -28,14 +29,22 @@
   <div id="status" class="status online">🟢 En línea</div>
 
   <div class="grid">
-    <!-- COLUMNA 1: AGREGAR / ACTUALIZAR STOCK -->
+    <!-- COLUMNA 1: INVENTARIO CON MATERIAL -->
     <div class="col">
       <h2>📦 Gestión de Inventario</h2>
       <label>ID o Código:</label>
-      <input type="text" id="prod-id" placeholder="Ej: 101 o Cód. Barras">
+      <input type="text" id="prod-id" placeholder="Ej: 101">
       
       <label>Nombre del Producto:</label>
-      <input type="text" id="prod-nombre" placeholder="Ej: Broquel Corazón">
+      <input type="text" id="prod-nombre" placeholder="Ej: Anillo Broquel">
+      
+      <label>Material:</label>
+      <select id="prod-material">
+        <option value="Oro">Oro</option>
+        <option value="Plata">Plata</option>
+        <option value="Acero">Acero</option>
+        <option value="Fantasía / Otro">Fantasía / Otro</option>
+      </select>
       
       <label>Precio ($):</label>
       <input type="number" id="prod-precio" placeholder="Ej: 38">
@@ -46,9 +55,24 @@
       <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
     </div>
 
-    <!-- COLUMNA 2: CATÁLOGO -->
+    <!-- COLUMNA 2: CATÁLOGO CON FILTRO -->
     <div class="col">
       <h2>🛒 Catálogo</h2>
+      
+      <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+        <label><strong>🔍 Buscar por Nombre o ID:</strong></label>
+        <input type="text" id="filtro-nombre" placeholder="Escribe para buscar..." oninput="filtrarProductos()">
+        
+        <label><strong>💎 Filtrar por Material:</strong></label>
+        <select id="filtro-material" onchange="filtrarProductos()">
+          <option value="TODOS">Todos los materiales</option>
+          <option value="Oro">Oro</option>
+          <option value="Plata">Plata</option>
+          <option value="Acero">Acero</option>
+          <option value="Fantasía / Otro">Fantasía / Otro</option>
+        </select>
+      </div>
+
       <button onclick="cargarProductos()">🔄 Cargar / Actualizar Lista</button>
       <div id="lista-productos" style="margin-top:15px;"></div>
     </div>
@@ -65,7 +89,7 @@
   </div>
 
   <script>
-    // COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ ABAJO
+    // PON TU URL DE GOOGLE APPS SCRIPT AQUÍ
     const API_URL = "REEMPLAZA_CON_TU_URL_DE_APPS_SCRIPT";
 
     let productos = [];
@@ -100,17 +124,22 @@
       } else {
         productos = JSON.parse(localStorage.getItem('productos_cache') || "[]");
       }
-      renderProductos();
+      renderProductos(productos);
     }
 
-    function renderProductos() {
+    function renderProductos(lista) {
       const div = document.getElementById('lista-productos');
       div.innerHTML = "";
-      productos.forEach(p => {
+      if (lista.length === 0) {
+        div.innerHTML = "<p style='color:#777;'>No se encontraron productos.</p>";
+        return;
+      }
+      lista.forEach(p => {
+        const matTexto = p.material ? ` (${p.material})` : '';
         div.innerHTML += `
           <div class="product-item">
             <div>
-              <strong>${p.nombre}</strong><br>
+              <strong>${p.nombre}</strong><span class="material-text">${matTexto}</span><br>
               <small>ID: ${p.id} | $${p.precio} | Stock: ${p.stock}</small>
             </div>
             <button onclick="agregarAlCarrito('${p.id}')">+</button>
@@ -119,9 +148,23 @@
       });
     }
 
+    function filtrarProductos() {
+      const texto = document.getElementById('filtro-nombre').value.toLowerCase();
+      const mat = document.getElementById('filtro-material').value;
+
+      const filtrados = productos.filter(p => {
+        const coincideNombre = p.nombre.toLowerCase().includes(texto) || p.id.toString().includes(texto);
+        const coincideMaterial = (mat === "TODOS") || (p.material === mat);
+        return coincideNombre && coincideMaterial;
+      });
+
+      renderProductos(filtrados);
+    }
+
     async function guardarProducto() {
       const id = document.getElementById('prod-id').value.trim();
       const nombre = document.getElementById('prod-nombre').value.trim();
+      const material = document.getElementById('prod-material').value;
       const precio = parseFloat(document.getElementById('prod-precio').value);
       const stock = parseInt(document.getElementById('prod-stock').value);
 
@@ -129,7 +172,7 @@
         return alert("Por favor llena todos los campos del producto.");
       }
 
-      const nuevoProd = { id, nombre, precio, stock };
+      const nuevoProd = { id, nombre, material, precio, stock };
 
       if (navigator.onLine) {
         alert("Guardando en Google Sheets...");
@@ -157,7 +200,7 @@
     function agregarAlCarrito(id) {
       const prod = productos.find(p => p.id == id);
       if (!prod) return;
-      
+
       const enCarrito = carrito.find(c => c.id == id);
       if (enCarrito) {
         enCarrito.cantidad++;
@@ -173,7 +216,8 @@
       let total = 0;
       carrito.forEach(item => {
         total += item.precio * item.cantidad;
-        ul.innerHTML += `<li>${item.nombre} x${item.cantidad} = $${item.precio * item.cantidad}</li>`;
+        const matTexto = item.material ? ` (${item.material})` : '';
+        ul.innerHTML += `<li>${item.nombre}${matTexto} x${item.cantidad} = $${item.precio * item.cantidad}</li>`;
       });
       document.getElementById('total').innerText = total;
     }
@@ -196,7 +240,10 @@
       const tel = document.getElementById('telefono').value;
       if (tel) {
         let msg = `*TICKET DE COMPRA*\nFecha: ${new Date().toLocaleDateString()}\n\n`;
-        carrito.forEach(i => msg += `${i.nombre} x${i.cantidad} = $${i.precio * i.cantidad}\n`);
+        carrito.forEach(i => {
+          const matTexto = i.material ? ` (${i.material})` : '';
+          msg += `${i.nombre}${matTexto} x${i.cantidad} = $${i.precio * i.cantidad}\n`;
+        });
         msg += `\n*TOTAL: $${total}*`;
         window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
       }
