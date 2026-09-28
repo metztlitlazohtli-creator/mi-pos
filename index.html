@@ -7,18 +7,19 @@
   <link rel="manifest" href="manifest.json">
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
-    h1 { color: #333; text-align: center; }
-    .status { text-align: center; padding: 8px; font-weight: bold; margin-bottom: 15px; border-radius: 5px; }
+    h1 { color: #333; text-align: center; margin-bottom: 10px; }
+    .status { text-align: center; padding: 8px; font-weight: bold; margin-bottom: 20px; border-radius: 5px; }
     .online { background: #d4edda; color: #155724; }
     .offline { background: #f8d7da; color: #721c24; }
     .grid { display: flex; gap: 20px; flex-wrap: wrap; }
-    .col { flex: 1; min-width: 300px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .col { flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .product-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
-    button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+    button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
     button.btn-blue { background: #007bff; }
     button.btn-whatsapp { background: #25D366; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
-    input { width: 100%; padding: 8px; margin: 5px 0 10px 0; box-sizing: border-box; }
+    input { width: 100%; padding: 8px; margin: 5px 0 12px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     ul { list-style: none; padding: 0; }
+    li { padding: 6px 0; border-bottom: 1px solid #eee; }
   </style>
 </head>
 <body>
@@ -27,32 +28,32 @@
   <div id="status" class="status online">🟢 En línea</div>
 
   <div class="grid">
-    <!-- Formulario para Inventario -->
+    <!-- COLUMNA 1: AGREGAR / ACTUALIZAR STOCK -->
     <div class="col">
       <h2>📦 Gestión de Inventario</h2>
       <label>ID o Código:</label>
       <input type="text" id="prod-id" placeholder="Ej: 101 o Cód. Barras">
       
       <label>Nombre del Producto:</label>
-      <input type="text" id="prod-nombre" placeholder="Ej: Galletas">
+      <input type="text" id="prod-nombre" placeholder="Ej: Broquel Corazón">
       
       <label>Precio ($):</label>
-      <input type="number" id="prod-precio" placeholder="Ej: 25">
+      <input type="number" id="prod-precio" placeholder="Ej: 38">
       
-      <label>Stock / Cantidad:</label>
-      <input type="number" id="prod-stock" placeholder="Ej: 50">
+      <label>Stock Total Actualizado:</label>
+      <input type="number" id="prod-stock" placeholder="Ej: 10">
       
       <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
     </div>
 
-    <!-- Catálogo de Productos -->
+    <!-- COLUMNA 2: CATÁLOGO -->
     <div class="col">
       <h2>🛒 Catálogo</h2>
       <button onclick="cargarProductos()">🔄 Cargar / Actualizar Lista</button>
       <div id="lista-productos" style="margin-top:15px;"></div>
     </div>
 
-    <!-- Carrito / Ticket -->
+    <!-- COLUMNA 3: CARRITO -->
     <div class="col">
       <h2>📋 Carrito de Compra</h2>
       <ul id="carrito"></ul>
@@ -64,8 +65,8 @@
   </div>
 
   <script>
-    // PON TU URL DE GOOGLE APPS SCRIPT AQUÍ
-    const API_URL = "https://script.google.com/macros/s/AKfycbz95Hlfb5259jL6FfVFd2IN27i0bKniWzVp6o98F5RSjS8da1GQdj7m5HocCj8lGT66/exec";
+    // COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ ABAJO
+    const API_URL = "REEMPLAZA_CON_TU_URL_DE_APPS_SCRIPT";
 
     let productos = [];
     let carrito = [];
@@ -77,7 +78,7 @@
       const status = document.getElementById('status');
       if (navigator.onLine) {
         status.className = "status online";
-        status.innerText = "🟢 En línea - Sincronizado";
+        status.innerText = "🟢 En línea";
         sincronizarVentasPendientes();
       } else {
         status.className = "status offline";
@@ -137,9 +138,8 @@
             method: "POST",
             body: JSON.stringify({ action: "saveProduct", product: nuevoProd })
           });
-          alert("¡Producto guardado exitosamente!");
+          alert("¡Producto guardado/actualizado exitosamente!");
           
-          // Limpiar campos del formulario
           document.getElementById('prod-id').value = "";
           document.getElementById('prod-nombre').value = "";
           document.getElementById('prod-precio').value = "";
@@ -150,12 +150,14 @@
           alert("Error al conectar con la base de datos.");
         }
       } else {
-        alert("Para agregar o editar productos necesitas estar conectado a Internet.");
+        alert("Para agregar o editar stock necesitas estar conectado a Internet.");
       }
     }
 
     function agregarAlCarrito(id) {
       const prod = productos.find(p => p.id == id);
+      if (!prod) return;
+      
       const enCarrito = carrito.find(c => c.id == id);
       if (enCarrito) {
         enCarrito.cantidad++;
@@ -215,7 +217,7 @@
           body: JSON.stringify({ action: "syncSale", sales: pendientes })
         });
         localStorage.setItem('ventas_pendientes', "[]");
-        alert("¡Ventas guardadas sin internet han sido subidas a Google Sheets!");
+        alert("¡Ventas sincronizadas con Google Sheets!");
         cargarProductos();
       } catch(e) { console.log(e); }
     }
