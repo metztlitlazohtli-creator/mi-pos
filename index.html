@@ -15,7 +15,6 @@
     .col { flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .product-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
     
-    /* Estilos para productos sin stock */
     .product-item.out-of-stock { opacity: 0.55; background-color: #f9f9f9; }
     
     button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
@@ -27,53 +26,51 @@
     li { padding: 6px 0; border-bottom: 1px solid #eee; }
     .material-text { color: #555; font-weight: normal; font-style: italic; }
     .badge-agotado { color: #dc3545; font-weight: bold; font-size: 12px; margin-left: 5px; }
+
+    /* ESTILOS DE LA PANTALLA DE ACCESO (LOGIN) */
+    #modal-login {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); display: flex; justify-content: center;
+      align-items: center; z-index: 9999;
+    }
+    .login-box {
+      background: white; padding: 30px; border-radius: 10px;
+      text-align: center; max-width: 350px; width: 90%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <h1>Punto de Venta</h1>
-  <div id="status" class="status online">🟢 En línea</div>
-
-  <div class="grid">
-    <!-- COLUMNA 1: INVENTARIO CON MATERIAL -->
-    <div class="col">
-      <h2>📦 Gestión de Inventario</h2>
-      <label>ID o Código:</label>
-      <input type="text" id="prod-id" placeholder="Ej: 101">
-      
-      <label>Nombre del Producto:</label>
-      <input type="text" id="prod-nombre" placeholder="Ej: Anillo Broquel">
-      
-      <label>Material:</label>
-      <select id="prod-material">
-        <option value="Plata ley 925">Plata ley 925</option>
-        <option value="Oro 10K">Oro 10K</option>
-        <option value="Oro">Oro</option>
-        <option value="Plata">Plata</option>
-        <option value="Acero">Acero</option>
-        <option value="Fantasía / Otro">Fantasía / Otro</option>
-      </select>
-      
-      <label>Precio ($):</label>
-      <input type="number" id="prod-precio" placeholder="Ej: 38">
-      
-      <label>Stock Total Actualizado:</label>
-      <input type="number" id="prod-stock" placeholder="Ej: 10">
-      
-      <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
+  <!-- PANTALLA DE LOGIN -->
+  <div id="modal-login">
+    <div class="login-box">
+      <h2>🔒 Acceso Requerido</h2>
+      <p>Ingresa el PIN de seguridad para acceder al punto de venta:</p>
+      <input type="password" id="pin-input" placeholder="Ingresa tu PIN" style="text-align:center; font-size: 18px;">
+      <button class="btn-blue" style="width:100%; padding: 10px; font-size: 16px;" onclick="validarPin()">Ingresar</button>
+      <p id="login-error" style="color: red; display: none; margin-top: 10px; font-weight: bold;">PIN incorrecto. Inténtalo de nuevo.</p>
     </div>
+  </div>
 
-    <!-- COLUMNA 2: CATÁLOGO CON FILTRO -->
-    <div class="col">
-      <h2>🛒 Catálogo</h2>
-      
-      <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-        <label><strong>🔍 Buscar por Nombre o ID:</strong></label>
-        <input type="text" id="filtro-nombre" placeholder="Escribe para buscar..." oninput="filtrarProductos()">
+  <!-- CONTENIDO PRINCIPAL DEL SISTEMA (OCULTO HASTA INICIAR SESIÓN) -->
+  <div id="app-content" class="hidden">
+    <h1>Punto de Venta</h1>
+    <div id="status" class="status online">🟢 En línea</div>
+
+    <div class="grid">
+      <!-- COLUMNA 1: INVENTARIO CON MATERIAL -->
+      <div class="col">
+        <h2>📦 Gestión de Inventario</h2>
+        <label>ID o Código:</label>
+        <input type="text" id="prod-id" placeholder="Ej: 101">
         
-        <label><strong>💎 Filtrar por Material:</strong></label>
-        <select id="filtro-material" onchange="filtrarProductos()">
-          <option value="TODOS">Todos los materiales</option>
+        <label>Nombre del Producto:</label>
+        <input type="text" id="prod-nombre" placeholder="Ej: Anillo Broquel">
+        
+        <label>Material:</label>
+        <select id="prod-material">
           <option value="Plata ley 925">Plata ley 925</option>
           <option value="Oro 10K">Oro 10K</option>
           <option value="Oro">Oro</option>
@@ -81,29 +78,83 @@
           <option value="Acero">Acero</option>
           <option value="Fantasía / Otro">Fantasía / Otro</option>
         </select>
+        
+        <label>Precio ($):</label>
+        <input type="number" id="prod-precio" placeholder="Ej: 38">
+        
+        <label>Stock Total Actualizado:</label>
+        <input type="number" id="prod-stock" placeholder="Ej: 10">
+        
+        <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
       </div>
 
-      <button onclick="cargarProductos()">🔄 Cargar / Actualizar Lista</button>
-      <div id="lista-productos" style="margin-top:15px;"></div>
-    </div>
+      <!-- COLUMNA 2: CATÁLOGO CON FILTRO -->
+      <div class="col">
+        <h2>🛒 Catálogo</h2>
+        
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+          <label><strong>🔍 Buscar por Nombre o ID:</strong></label>
+          <input type="text" id="filtro-nombre" placeholder="Escribe para buscar..." oninput="filtrarProductos()">
+          
+          <label><strong>💎 Filtrar por Material:</strong></label>
+          <select id="filtro-material" onchange="filtrarProductos()">
+            <option value="TODOS">Todos los materiales</option>
+            <option value="Plata ley 925">Plata ley 925</option>
+            <option value="Oro 10K">Oro 10K</option>
+            <option value="Oro">Oro</option>
+            <option value="Plata">Plata</option>
+            <option value="Acero">Acero</option>
+            <option value="Fantasía / Otro">Fantasía / Otro</option>
+          </select>
+        </div>
 
-    <!-- COLUMNA 3: CARRITO -->
-    <div class="col">
-      <h2>📋 Carrito de Compra</h2>
-      <ul id="carrito"></ul>
-      <h3>Total: $<span id="total">0</span></h3>
-      <label>Teléfono Cliente (WhatsApp):</label>
-      <input type="text" id="telefono" placeholder="Ej: 521234567890">
-      <button class="btn-whatsapp" onclick="completarVenta()">🛒 Finalizar Venta y Enviar Ticket</button>
+        <button onclick="cargarProductos()">🔄 Cargar / Actualizar Lista</button>
+        <div id="lista-productos" style="margin-top:15px;"></div>
+      </div>
+
+      <!-- COLUMNA 3: CARRITO -->
+      <div class="col">
+        <h2>📋 Carrito de Compra</h2>
+        <ul id="carrito"></ul>
+        <h3>Total: $<span id="total">0</span></h3>
+        <label>Teléfono Cliente (WhatsApp):</label>
+        <input type="text" id="telefono" placeholder="Ej: 521234567890">
+        <button class="btn-whatsapp" onclick="completarVenta()">🛒 Finalizar Venta y Enviar Ticket</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // PON TU URL DE GOOGLE APPS SCRIPT AQUÍ
-    const API_URL = "https://script.google.com/macros/s/AKfycbyk8wfIMc8mQxx-KNdKF2YtfchGV2aFNyMAEahaltgKmPV_QoW6FHo6r31pc5z3yXwk/exec";
+    // ⚠️ COLOCA AQUÍ TU URL DE APPS SCRIPT Y TU CLAVE SECRETA
+    const API_URL = "https://script.google.com/macros/s/AKfycbwZ-6s5h1SeiSBKbAo8Kt1uuX0RhUDd_YDIOAZwmoVO_vz-QMCGWS4WAr7UBG0sZmVZ/exec";
+    const API_KEY = "477$inLimite"; // 👈 Debe coincidir exactamente con el PIN de Apps Script
 
     let productos = [];
     let carrito = [];
+
+    // COMPROBAR SI YA HABÍA INICIADO SESIÓN PREVIAMENTE
+    document.addEventListener("DOMContentLoaded", () => {
+      const auth = localStorage.getItem("pos_authenticated");
+      if (auth === "true") {
+        mostrarSistema();
+      }
+    });
+
+    function validarPin() {
+      const pinIngresado = document.getElementById("pin-input").value;
+      if (pinIngresado === API_KEY) {
+        localStorage.setItem("pos_authenticated", "true");
+        mostrarSistema();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
+    function mostrarSistema() {
+      document.getElementById("modal-login").classList.add("hidden");
+      document.getElementById("app-content").classList.remove("hidden");
+      cargarProductos();
+    }
 
     window.addEventListener('online', actualizarEstado);
     window.addEventListener('offline', actualizarEstado);
@@ -127,8 +178,15 @@
     async function cargarProductos() {
       if (navigator.onLine) {
         try {
-          const res = await fetch(API_URL + "?action=getProducts");
-          productos = await res.json();
+          const res = await fetch(`${API_URL}?action=getProducts&key=${API_KEY}`);
+          const data = await res.json();
+          
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+          
+          productos = data;
           localStorage.setItem('productos_cache', JSON.stringify(productos));
         } catch(e) { console.log(e); }
       } else {
@@ -148,7 +206,6 @@
         const matTexto = p.material ? ` (${p.material})` : '';
         const sinStock = parseInt(p.stock) <= 0;
         
-        // Verificar cuántos hay agregados en el carrito actualmente
         const enCarrito = carrito.find(c => c.id == p.id);
         const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
         const alcanzomaximo = cantidadEnCarrito >= parseInt(p.stock);
@@ -199,7 +256,7 @@
         try {
           await fetch(API_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "saveProduct", product: nuevoProd })
+            body: JSON.stringify({ action: "saveProduct", product: nuevoProd, key: API_KEY })
           });
           alert("¡Producto guardado/actualizado exitosamente!");
           
@@ -235,7 +292,7 @@
         }
       }
       renderCarrito();
-      renderProductos(productos); // Volver a renderizar para deshabilitar botón si alcanza el tope
+      renderProductos(productos);
     }
 
     function renderCarrito() {
@@ -289,15 +346,13 @@
       try {
         await fetch(API_URL, {
           method: "POST",
-          body: JSON.stringify({ action: "syncSale", sales: pendientes })
+          body: JSON.stringify({ action: "syncSale", sales: pendientes, key: API_KEY })
         });
         localStorage.setItem('ventas_pendientes', "[]");
         alert("¡Ventas sincronizadas con Google Sheets!");
         cargarProductos();
       } catch(e) { console.log(e); }
     }
-
-    cargarProductos();
   </script>
 </body>
 </html>
