@@ -133,7 +133,8 @@
   </div>
 
   <script>
-    const API_URL = "https://google.com";
+    // ⚠️ REEMPLAZA ESTA URL POR TU DIRECCIÓN REAL DE GOOGLE APPS SCRIPT
+    const API_URL = "https://script.google.com/macros/s/AKfycbwZ-6s5h1SeiSBKbAo8Kt1uuX0RhUDd_YDIOAZwmoVO_vz-QMCGWS4WAr7UBG0sZmVZ/exec";
     const API_KEY = "477$inLimite"; 
 
     let productos = [];
@@ -181,7 +182,7 @@
     }
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error:", err));
+      navigator.serviceWorker.register('sw.js?v=2').catch(err => console.log("SW error:", err));
     }
 
     async function cargarProductos() {
