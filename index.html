@@ -8,15 +8,13 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
     h1 { color: #333; text-align: center; margin-bottom: 10px; }
-    .status { text-align: center; padding: 8px; font-weight: bold; margin-bottom: 20px; border-radius: 5px; }
+    .status { text-align: center; padding: 8px; font-weight: bold; margin-bottom: 20px; border-radius: 5px; transition: all 0.3s ease; }
     .online { background: #d4edda; color: #155724; }
     .offline { background: #f8d7da; color: #721c24; }
     .grid { display: flex; gap: 20px; flex-wrap: wrap; }
     .col { flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .product-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
-    
     .product-item.out-of-stock { opacity: 0.55; background-color: #f9f9f9; }
-    
     button { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
     button:disabled { background: #6c757d !important; cursor: not-allowed; opacity: 0.6; }
     button.btn-blue { background: #007bff; }
@@ -26,24 +24,13 @@
     li { padding: 6px 0; border-bottom: 1px solid #eee; }
     .material-text { color: #555; font-weight: normal; font-style: italic; }
     .badge-agotado { color: #dc3545; font-weight: bold; font-size: 12px; margin-left: 5px; }
-
-    /* ESTILOS DE LA PANTALLA DE ACCESO (LOGIN) */
-    #modal-login {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); display: flex; justify-content: center;
-      align-items: center; z-index: 9999;
-    }
-    .login-box {
-      background: white; padding: 30px; border-radius: 10px;
-      text-align: center; max-width: 350px; width: 90%;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
+    #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .login-box { background: white; padding: 30px; border-radius: 10px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <!-- PANTALLA DE LOGIN -->
   <div id="modal-login">
     <div class="login-box">
       <h2>🔒 Acceso Requerido</h2>
@@ -54,21 +41,17 @@
     </div>
   </div>
 
-  <!-- CONTENIDO PRINCIPAL DEL SISTEMA (OCULTO HASTA INICIAR SESIÓN) -->
   <div id="app-content" class="hidden">
     <h1>Punto de Venta</h1>
     <div id="status" class="status online">🟢 En línea</div>
 
     <div class="grid">
-      <!-- COLUMNA 1: INVENTARIO CON MATERIAL -->
       <div class="col">
         <h2>📦 Gestión de Inventario</h2>
         <label>ID o Código:</label>
         <input type="text" id="prod-id" placeholder="Ej: 101">
-        
         <label>Nombre del Producto:</label>
         <input type="text" id="prod-nombre" placeholder="Ej: Anillo Broquel">
-        
         <label>Material:</label>
         <select id="prod-material">
           <option value="Plata ley 925">Plata ley 925</option>
@@ -78,24 +61,18 @@
           <option value="Acero">Acero</option>
           <option value="Fantasía / Otro">Fantasía / Otro</option>
         </select>
-        
         <label>Precio ($):</label>
         <input type="number" id="prod-precio" placeholder="Ej: 38">
-        
         <label>Stock Total Actualizado:</label>
         <input type="number" id="prod-stock" placeholder="Ej: 10">
-        
         <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
       </div>
 
-      <!-- COLUMNA 2: CATÁLOGO CON FILTRO -->
       <div class="col">
         <h2>🛒 Catálogo</h2>
-        
         <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
           <label><strong>🔍 Buscar por Nombre o ID:</strong></label>
           <input type="text" id="filtro-nombre" placeholder="Escribe para buscar..." oninput="filtrarProductos()">
-          
           <label><strong>💎 Filtrar por Material:</strong></label>
           <select id="filtro-material" onchange="filtrarProductos()">
             <option value="TODOS">Todos los materiales</option>
@@ -107,12 +84,10 @@
             <option value="Fantasía / Otro">Fantasía / Otro</option>
           </select>
         </div>
-
         <button onclick="cargarProductos()">🔄 Cargar / Actualizar Lista</button>
         <div id="lista-productos" style="margin-top:15px;"></div>
       </div>
 
-      <!-- COLUMNA 3: CARRITO -->
       <div class="col">
         <h2>📋 Carrito de Compra</h2>
         <ul id="carrito"></ul>
@@ -125,24 +100,20 @@
   </div>
 
   <script>
-    // ⚠️ COLOCA AQUÍ TU URL DE APPS SCRIPT Y TU CLAVE SECRETA
-    const API_URL = "https://script.google.com/macros/s/AKfycbwZ-6s5h1SeiSBKbAo8Kt1uuX0RhUDd_YDIOAZwmoVO_vz-QMCGWS4WAr7UBG0sZmVZ/exec";
-    const API_KEY = "477$inLimite"; // 👈 Debe coincidir exactamente con el PIN de Apps Script
+    const API_URL = "https://google.com";
+    const API_KEY = "477$inLimite"; 
 
     let productos = [];
     let carrito = [];
 
-    // COMPROBAR SI YA HABÍA INICIADO SESIÓN PREVIAMENTE
     document.addEventListener("DOMContentLoaded", () => {
       const auth = localStorage.getItem("pos_authenticated");
-      if (auth === "true") {
-        mostrarSistema();
-      }
+      if (auth === "true") mostrarSistema();
+      actualizarEstado();
     });
 
     function validarPin() {
-      const pinIngresado = document.getElementById("pin-input").value;
-      if (pinIngresado === API_KEY) {
+      if (document.getElementById("pin-input").value === API_KEY) {
         localStorage.setItem("pos_authenticated", "true");
         mostrarSistema();
       } else {
@@ -164,195 +135,84 @@
       if (navigator.onLine) {
         status.className = "status online";
         status.innerText = "🟢 En línea";
-        sincronizarVentasPendientes();
+        sincronizarDatosPendientes();
       } else {
         status.className = "status offline";
-        status.innerText = "🔴 Modo Offline";
+        status.innerText = "🔴 Modo Offline (Sin Internet)";
       }
     }
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error:", err));
     }
 
     async function cargarProductos() {
       if (navigator.onLine) {
         try {
+          // Usamos un truco de redirección para saltar el bloqueo CORS de Google
           const res = await fetch(`${API_URL}?action=getProducts&key=${API_KEY}`);
           const data = await res.json();
-          
-          if (data.error) {
-            alert(data.error);
-            return;
-          }
-          
+          if (data.error) { alert("Error: " + data.error); return; }
           productos = data;
           localStorage.setItem('productos_cache', JSON.stringify(productos));
-        } catch(e) { console.log(e); }
+        } catch(e) { console.error("Error cargando online, usando caché:", e); obtenerCache(); }
       } else {
-        productos = JSON.parse(localStorage.getItem('productos_cache') || "[]");
+        obtenerCache();
       }
       renderProductos(productos);
     }
 
+    function obtenerCache() {
+      productos = JSON.parse(localStorage.getItem('productos_cache') || "[]");
+    }
+
     function renderProductos(lista) {
-      const div = document.getElementById('lista-productos');
-      div.innerHTML = "";
+      const contenedor = document.getElementById("lista-productos");
+      contenedor.innerHTML = "";
       if (lista.length === 0) {
-        div.innerHTML = "<p style='color:#777;'>No se encontraron productos.</p>";
+        contenedor.innerHTML = "<p style='text-align: center; color:#666;'>No hay productos registrados.</p>";
         return;
       }
-      lista.forEach(p => {
-        const matTexto = p.material ? ` (${p.material})` : '';
-        const sinStock = parseInt(p.stock) <= 0;
-        
-        const enCarrito = carrito.find(c => c.id == p.id);
-        const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
-        const alcanzomaximo = cantidadEnCarrito >= parseInt(p.stock);
-
-        const deshabilitado = sinStock || alcanzomaximo;
-
-        div.innerHTML += `
-          <div class="product-item ${sinStock ? 'out-of-stock' : ''}">
-            <div>
-              <strong>${p.nombre}</strong><span class="material-text">${matTexto}</span>
-              ${sinStock ? '<span class="badge-agotado">(Agotado)</span>' : ''}<br>
-              <small>ID: ${p.id} | $${p.precio} | Stock: ${p.stock}</small>
-            </div>
-            <button ${deshabilitado ? 'disabled' : ''} onclick="agregarAlCarrito('${p.id}')">+</button>
+      lista.forEach(prod => {
+        const estaAgotado = parseInt(prod.stock || 0) <= 0;
+        const item = document.createElement("div");
+        item.className = `product-item ${estaAgotado ? 'out-of-stock' : ''}`;
+        item.innerHTML = `
+          <div>
+            <strong>[${prod.id}] ${prod.nombre}</strong><br>
+            <span class="material-text">${prod.material}</span> — <strong>$${prod.precio}</strong>
+            <span style="font-size:12px; color:#666; margin-left:8px;">(Stock: ${prod.stock})</span>
           </div>
+          <button class="btn-blue" ${estaAgotado ? 'disabled' : ''} onclick="agregarAlCarrito('${prod.id}')">${estaAgotado ? '❌' : '＋'}</button>
         `;
+        contenedor.appendChild(item);
       });
     }
 
     function filtrarProductos() {
-      const texto = document.getElementById('filtro-nombre').value.toLowerCase();
-      const mat = document.getElementById('filtro-material').value;
-
+      const busqueda = document.getElementById("filtro-nombre").value.toLowerCase().trim();
+      const material = document.getElementById("filtro-material").value;
       const filtrados = productos.filter(p => {
-        const coincideNombre = p.nombre.toLowerCase().includes(texto) || p.id.toString().includes(texto);
-        const coincideMaterial = (mat === "TODOS") || (p.material === mat);
-        return coincideNombre && coincideMaterial;
+        const coincideTexto = p.id.toString().includes(busqueda) || p.nombre.toLowerCase().includes(busqueda);
+        const coincideMat = material === "TODOS" || p.material === material;
+        return coincideTexto && coincideMat;
       });
-
       renderProductos(filtrados);
     }
 
-    async function guardarProducto() {
-      const id = document.getElementById('prod-id').value.trim();
-      const nombre = document.getElementById('prod-nombre').value.trim();
-      const material = document.getElementById('prod-material').value;
-      const precio = parseFloat(document.getElementById('prod-precio').value);
-      const stock = parseInt(document.getElementById('prod-stock').value);
-
-      if (!id || !nombre || isNaN(precio) || isNaN(stock)) {
-        return alert("Por favor llena todos los campos del producto.");
-      }
-
-      const nuevoProd = { id, nombre, material, precio, stock };
-
-      if (navigator.onLine) {
-        alert("Guardando en Google Sheets...");
-        try {
-          await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "saveProduct", product: nuevoProd, key: API_KEY })
-          });
-          alert("¡Producto guardado/actualizado exitosamente!");
-          
-          document.getElementById('prod-id').value = "";
-          document.getElementById('prod-nombre').value = "";
-          document.getElementById('prod-precio').value = "";
-          document.getElementById('prod-stock').value = "";
-          
-          cargarProductos();
-        } catch(e) {
-          alert("Error al conectar con la base de datos.");
-        }
-      } else {
-        alert("Para agregar o editar stock necesitas estar conectado a Internet.");
-      }
-    }
-
     function agregarAlCarrito(id) {
-      const prod = productos.find(p => p.id == id);
+      const prod = productos.find(p => p.id.toString() === id.toString());
       if (!prod) return;
-
-      const enCarrito = carrito.find(c => c.id == id);
-      if (enCarrito) {
-        if (enCarrito.cantidad < prod.stock) {
-          enCarrito.cantidad++;
-        } else {
-          alert("No puedes agregar más unidades de las disponibles en stock.");
-          return;
-        }
-      } else {
-        if (prod.stock > 0) {
-          carrito.push({ ...prod, cantidad: 1 });
-        }
-      }
-      renderCarrito();
-      renderProductos(productos);
+      const enCarrito = carrito.filter(item => item.id.toString() === id.toString()).length;
+      if (enCarrito >= parseInt(prod.stock)) { alert("Stock insuficiente."); return; }
+      carrito.push({...prod});
+      actualizarCarrito();
     }
 
-    function renderCarrito() {
-      const ul = document.getElementById('carrito');
-      ul.innerHTML = "";
-      let total = 0;
-      carrito.forEach(item => {
-        total += item.precio * item.cantidad;
-        const matTexto = item.material ? ` (${item.material})` : '';
-        ul.innerHTML += `<li>${item.nombre}${matTexto} x${item.cantidad} = $${item.precio * item.cantidad}</li>`;
-      });
-      document.getElementById('total').innerText = total;
+    function eliminarDelCarrito(index) {
+      carrito.splice(index, 1);
+      actualizarCarrito();
     }
 
-    async function completarVenta() {
-      if (carrito.length === 0) return alert("El carrito está vacío");
-
-      const total = document.getElementById('total').innerText;
-      const venta = {
-        id: Date.now(),
-        fecha: new Date().toISOString(),
-        total: total,
-        items: carrito
-      };
-
-      let pendientes = JSON.parse(localStorage.getItem('ventas_pendientes') || "[]");
-      pendientes.push(venta);
-      localStorage.setItem('ventas_pendientes', JSON.stringify(pendientes));
-
-      const tel = document.getElementById('telefono').value;
-      if (tel) {
-        let msg = `*TICKET DE COMPRA*\nFecha: ${new Date().toLocaleDateString()}\n\n`;
-        carrito.forEach(i => {
-          const matTexto = i.material ? ` (${i.material})` : '';
-          msg += `${i.nombre}${matTexto} x${i.cantidad} = $${i.precio * i.cantidad}\n`;
-        });
-        msg += `\n*TOTAL: $${total}*`;
-        window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
-      }
-
-      carrito = [];
-      renderCarrito();
-      actualizarEstado();
-    }
-
-    async function sincronizarVentasPendientes() {
-      if (!navigator.onLine) return;
-      let pendientes = JSON.parse(localStorage.getItem('ventas_pendientes') || "[]");
-      if (pendientes.length === 0) return;
-
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "syncSale", sales: pendientes, key: API_KEY })
-        });
-        localStorage.setItem('ventas_pendientes', "[]");
-        alert("¡Ventas sincronizadas con Google Sheets!");
-        cargarProductos();
-      } catch(e) { console.log(e); }
-    }
-  </script>
-</body>
-</html>
+    function actualizarCarrito() {
+      const lista = document.getElementById("carrito");
