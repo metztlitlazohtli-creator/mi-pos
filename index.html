@@ -46,7 +46,7 @@
     .login-box { background: white; padding: 35px 25px; border-radius: 12px; text-align: center; max-width: 340px; width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     .hidden { display: none !important; }
 
-    /* REGLAS EXCLUSIVAS PARA COMPUTADORAS (Pantallas medianas y grandes) */
+    /* REGLAS EXCLUSIVAS PARA COMPUTADORAS */
     @media (min-width: 768px) {
       body { padding: 25px; }
       h1 { font-size: 32px; margin-bottom: 25px; }
@@ -59,6 +59,7 @@
 </head>
 <body>
 
+  <!-- PANTALLA DE LOGIN -->
   <div id="modal-login">
     <div class="login-box">
       <h2>🔒 Acceso Requerido</h2>
@@ -69,11 +70,13 @@
     </div>
   </div>
 
+  <!-- CONTENIDO PRINCIPAL DEL SISTEMA -->
   <div id="app-content" class="hidden">
     <h1>Punto de Venta</h1>
     <div id="status" class="status online">🟢 En línea</div>
 
     <div class="grid">
+      <!-- COLUMNA 1: INVENTARIO -->
       <div class="col">
         <h2>📦 Gestión de Inventario</h2>
         <label>ID o Código:</label>
@@ -96,6 +99,7 @@
         <button class="btn-blue" style="width:100%; padding:10px;" onclick="guardarProducto()">💾 Guardar / Actualizar Producto</button>
       </div>
 
+      <!-- COLUMNA 2: CATÁLOGO -->
       <div class="col">
         <h2>🛒 Catálogo</h2>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
@@ -116,6 +120,7 @@
         <div id="lista-productos" style="margin-top:15px;"></div>
       </div>
 
+      <!-- COLUMNA 3: CARRITO -->
       <div class="col">
         <h2>📋 Carrito de Compra</h2>
         <ul id="carrito"></ul>
@@ -136,12 +141,15 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       const auth = localStorage.getItem("pos_authenticated");
-      if (auth === "true") mostrarSistema();
+      if (auth === "true") {
+        mostrarSistema();
+      }
       actualizarEstado();
     });
 
     function validarPin() {
-      if (document.getElementById("pin-input").value === API_KEY) {
+      const pinIngresado = document.getElementById("pin-input").value;
+      if (pinIngresado === API_KEY) {
         localStorage.setItem("pos_authenticated", "true");
         mostrarSistema();
       } else {
@@ -160,13 +168,15 @@
 
     function actualizarEstado() {
       const status = document.getElementById('status');
-      if (navigator.onLine) {
-        status.className = "status online";
-        status.innerText = "🟢 En línea";
-        sincronizarDatosPendientes();
-      } else {
-        status.className = "status offline";
-        status.innerText = "🔴 Modo Offline (Sin Internet)";
+      if (status) {
+        if (navigator.onLine) {
+          status.className = "status online";
+          status.innerText = "🟢 En línea";
+          sincronizarDatosPendientes();
+        } else {
+          status.className = "status offline";
+          status.innerText = "🔴 Modo Offline (Sin Internet)";
+        }
       }
     }
 
@@ -177,13 +187,18 @@
     async function cargarProductos() {
       if (navigator.onLine) {
         try {
-          // Usamos un truco de redirección para saltar el bloqueo CORS de Google
           const res = await fetch(`${API_URL}?action=getProducts&key=${API_KEY}`);
           const data = await res.json();
-          if (data.error) { alert("Error: " + data.error); return; }
+          if (data.error) { 
+            alert("Error de la base de datos: " + data.error); 
+            return; 
+          }
           productos = data;
           localStorage.setItem('productos_cache', JSON.stringify(productos));
-        } catch(e) { console.error("Error cargando online, usando caché:", e); obtenerCache(); }
+        } catch(e) { 
+          console.error("Error cargando online, usando caché:", e); 
+          obtenerCache(); 
+        }
       } else {
         obtenerCache();
       }
@@ -196,51 +211,6 @@
 
     function renderProductos(lista) {
       const contenedor = document.getElementById("lista-productos");
+      if (!contenedor) return;
       contenedor.innerHTML = "";
       if (lista.length === 0) {
-        contenedor.innerHTML = "<p style='text-align: center; color:#666;'>No hay productos registrados.</p>";
-        return;
-      }
-      lista.forEach(prod => {
-        const estaAgotado = parseInt(prod.stock || 0) <= 0;
-        const item = document.createElement("div");
-        item.className = `product-item ${estaAgotado ? 'out-of-stock' : ''}`;
-        item.innerHTML = `
-          <div>
-            <strong>[${prod.id}] ${prod.nombre}</strong><br>
-            <span class="material-text">${prod.material}</span> — <strong>$${prod.precio}</strong>
-            <span style="font-size:12px; color:#666; margin-left:8px;">(Stock: ${prod.stock})</span>
-          </div>
-          <button class="btn-blue" ${estaAgotado ? 'disabled' : ''} onclick="agregarAlCarrito('${prod.id}')">${estaAgotado ? '❌' : '＋'}</button>
-        `;
-        contenedor.appendChild(item);
-      });
-    }
-
-    function filtrarProductos() {
-      const busqueda = document.getElementById("filtro-nombre").value.toLowerCase().trim();
-      const material = document.getElementById("filtro-material").value;
-      const filtrados = productos.filter(p => {
-        const coincideTexto = p.id.toString().includes(busqueda) || p.nombre.toLowerCase().includes(busqueda);
-        const coincideMat = material === "TODOS" || p.material === material;
-        return coincideTexto && coincideMat;
-      });
-      renderProductos(filtrados);
-    }
-
-    function agregarAlCarrito(id) {
-      const prod = productos.find(p => p.id.toString() === id.toString());
-      if (!prod) return;
-      const enCarrito = carrito.filter(item => item.id.toString() === id.toString()).length;
-      if (enCarrito >= parseInt(prod.stock)) { alert("Stock insuficiente."); return; }
-      carrito.push({...prod});
-      actualizarCarrito();
-    }
-
-    function eliminarDelCarrito(index) {
-      carrito.splice(index, 1);
-      actualizarCarrito();
-    }
-
-    function actualizarCarrito() {
-      const lista = document.getElementById("carrito");
